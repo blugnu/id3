@@ -1,9 +1,9 @@
-package tags
+package id3
 
-type Id3Genre byte
+type Genre byte
 
 const (
-	Blues Id3Genre = iota
+	Blues Genre = iota
 	ClassicRock
 	Country
 	Dance
@@ -202,7 +202,7 @@ const (
 	NoGenre = 255
 )
 
-var Id3GenreName = map[Id3Genre]string{
+var GenreName = map[Genre]string{
 	Blues:            "Blues",
 	ClassicRock:      "Classic Rock",
 	Country:          "Country",

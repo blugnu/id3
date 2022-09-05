@@ -1,9 +1,10 @@
-package tags
+package id3v1
 
 import (
 	"bytes"
 	"testing"
 
+	"github.com/blugnu/tags/id3"
 	"github.com/blugnu/tags/internal/testdata"
 )
 
@@ -14,15 +15,15 @@ func Test_Id3v1(t *testing.T) {
 		t.Errorf("unexpected error: %v", err)
 	}
 
-	seeker := bytes.NewReader(data)
-	result, err := LoadFrom(seeker)
+	src := bytes.NewReader(data)
+	tag, err := ReadTag(src)
 	if err != nil {
-		t.Errorf("unexpected error: %v", err)
+		t.Fatalf("unexpected error: %v", err)
 	}
 
 	t.Run("has expected artist", func(t *testing.T) {
 		wanted := "Test Artist"
-		got := result.Id3v1.Artist
+		got := tag.Artist
 		if wanted != got {
 			t.Errorf("wanted %q, got %q", wanted, got)
 		}
@@ -30,7 +31,7 @@ func Test_Id3v1(t *testing.T) {
 
 	t.Run("has expected album", func(t *testing.T) {
 		wanted := "Test Album"
-		got := result.Id3v1.Album
+		got := tag.Album
 		if wanted != got {
 			t.Errorf("wanted %q, got %q", wanted, got)
 		}
@@ -38,7 +39,7 @@ func Test_Id3v1(t *testing.T) {
 
 	t.Run("has expected track title", func(t *testing.T) {
 		wanted := "Test Title"
-		got := result.Id3v1.Title
+		got := tag.Title
 		if wanted != got {
 			t.Errorf("wanted %q, got %q", wanted, got)
 		}
@@ -46,7 +47,7 @@ func Test_Id3v1(t *testing.T) {
 
 	t.Run("has expected comment", func(t *testing.T) {
 		wanted := "Test Comment"
-		got := result.Id3v1.Comment
+		got := tag.Comment
 		if wanted != got {
 			t.Errorf("wanted %q, got %q", wanted, got)
 		}
@@ -54,7 +55,7 @@ func Test_Id3v1(t *testing.T) {
 
 	t.Run("has expected track number", func(t *testing.T) {
 		wanted := 3
-		got := result.Id3v1.TrackNumber
+		got := tag.TrackNumber
 		if wanted != got {
 			t.Errorf("wanted %q, got %q", wanted, got)
 		}
@@ -62,23 +63,23 @@ func Test_Id3v1(t *testing.T) {
 
 	t.Run("has expected year", func(t *testing.T) {
 		wanted := 2000
-		got := result.Id3v1.Year
+		got := tag.Year
 		if wanted != got {
 			t.Errorf("wanted %q, got %q", wanted, got)
 		}
 	})
 
 	t.Run("has expected genre id", func(t *testing.T) {
-		wanted := Jazz
-		got := result.Id3v1.Genre
+		wanted := id3.Jazz
+		got := tag.Genre
 		if wanted != got {
 			t.Errorf("wanted %q, got %q", wanted, got)
 		}
 	})
 
 	t.Run("has expected genre name", func(t *testing.T) {
-		wanted := Id3GenreName[Jazz]
-		got := Id3GenreName[result.Id3v1.Genre]
+		wanted := id3.GenreName[id3.Jazz]
+		got := id3.GenreName[tag.Genre]
 		if wanted != got {
 			t.Errorf("wanted %q, got %q", wanted, got)
 		}

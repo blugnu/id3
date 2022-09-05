@@ -9,7 +9,7 @@ func TestData(t *testing.T) {
 			t.Errorf("unexpected error: %v", err)
 		}
 
-		wanted := 5
+		wanted := 1
 		got := len(files)
 		if wanted != got {
 			t.Errorf("wanted %v, got %d", wanted, got)
@@ -22,7 +22,7 @@ func TestData(t *testing.T) {
 			t.Errorf("unexpected error: %v", err)
 		}
 
-		wanted := 10
+		wanted := 4
 		got := len(files)
 		if wanted != got {
 			t.Errorf("wanted %v, got %d", wanted, got)

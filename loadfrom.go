@@ -3,47 +3,69 @@ package tags
 import (
 	"fmt"
 	"io"
+
+	"github.com/blugnu/tags/id3/id3v1"
+	"github.com/blugnu/tags/id3/id3v2"
 )
 
+type AudioData struct {
+	DataStart int64
+	DataSize  int64
+}
 type Metadata struct {
-	Id3v1         *Id3v1Tag
-	Id3v2         []*Id3v2Tag
-	AudioDataPos  int64
-	AudioDataSize int64
+	Id3v1 *id3v1.Tag
+	Id3v2 []*id3v2.Tag
+	Audio AudioData
 }
 
 func LoadFrom(src io.ReadSeeker) (*Metadata, error) {
 	var err error
 
+	filesize, _ := src.Seek(0, io.SeekEnd)
+
 	md := &Metadata{
-		Id3v2:         []*Id3v2Tag{},
-		AudioDataPos:  -1,
-		AudioDataSize: -1,
+		Id3v2: []*id3v2.Tag{},
+		Audio: AudioData{
+			DataStart: 0,
+			DataSize:  filesize,
+		},
 	}
 
-	// Read any ID3v1 tag (from the end of the file)
-	md.Id3v1, err = readId3v1(src)
+	// Read any ID3v1 tag (these are always located at the end of the
+	// file which the id3v1 reader takes care of)
+	md.Id3v1, err = id3v1.ReadTag(src)
 	if err != nil {
 		return nil, fmt.Errorf("id3v1: %w", err)
 	}
 
-	// Read any ID3v2 tags (from the start of the file)
+	// We found a v1 tag, so adjust the audio data size to account for it
+	md.Audio.DataSize -= id3v1.TagSize
+
+	// Now reposition at the start of the file and read any ID3v2 tags,
+	// updating the audio data start position as we go (audio data follows
+	// immediately after any id3v2 tags at the start of the file)
 	src.Seek(0, io.SeekStart)
 	for {
-		md.AudioDataPos, _ = src.Seek(0, io.SeekCurrent)
+		md.Audio.DataStart, _ = src.Seek(0, io.SeekCurrent)
 
-		tag, err := readId3v2(src)
+		tag, err := id3v2.ReadTag(src)
 		if err != nil {
-			md.AudioDataPos = -1
+			md.Audio.DataStart = 0
 			return nil, fmt.Errorf("id3v2: %w", err)
 		}
-		if tag != nil {
-			md.Id3v2 = append(md.Id3v2, tag)
-			continue
+		if tag == nil {
+			break
 		}
 
-		break
+		md.Id3v2 = append(md.Id3v2, tag)
 	}
+
+	// Update the audio data size to reflect any change in the determined
+	// audio data start position
+	md.Audio.DataSize -= md.Audio.DataStart
+
+	// TODO: Read any id3v2 tags located at the end of the file, updating
+	// the audio data size to reflect any
 
 	return md, nil
 }
