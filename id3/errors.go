@@ -38,5 +38,8 @@ type UnsupportedVersionError struct {
 }
 
 func (e UnsupportedVersionError) Error() string {
-	return fmt.Sprintf("unsupported version (%d.%d) of a v%d tag", e.Major, e.Revision, e.TagVersion)
+	if e.Revision > 0 {
+		return fmt.Sprintf("unsupported version (%d.%d) of a v%d tag", e.Major, e.Revision, e.TagVersion)
+	}
+	return "unsupported version"
 }

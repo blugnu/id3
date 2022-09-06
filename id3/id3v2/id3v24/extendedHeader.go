@@ -139,7 +139,7 @@ func (h *extendedHeader) readFlagData(reader reader.Reader, expectedDataBytes by
 		return nil, fmt.Errorf("unexpected length for %s flag data (got %d, expected %d)", name, dataBytes, expectedDataBytes)
 	}
 	if dataBytes > 0 {
-		return reader.ReadBytes(uint(dataBytes))
+		return reader.ReadBytes(int(dataBytes))
 	}
 	return nil, nil
 }

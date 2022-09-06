@@ -1,17 +1,24 @@
 package reader
 
 import (
-	"encoding/binary"
 	"unsafe"
 )
 
-var byteOrder = func() binary.ByteOrder {
-	var i int = 0x0100
+type byteOrder = byte
+
+const (
+	unknown byteOrder = iota
+	littleEndian
+	bigEndian
+)
+
+var endianness = func() byteOrder {
+	var i int32 = 1
 	ptr := unsafe.Pointer(&i)
 	if *(*byte)(ptr) == 0x01 {
-		return binary.BigEndian
+		return littleEndian
 	}
-	return binary.LittleEndian
+	return bigEndian
 }()
 
 // Returns the specified byte slice with the order of the bytes reversed

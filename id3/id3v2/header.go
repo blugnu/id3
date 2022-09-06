@@ -4,14 +4,14 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"unsafe"
 
 	"github.com/blugnu/tags/id3"
 	"github.com/blugnu/tags/internal/reader"
 )
 
 var id3v2HeaderSIG = []byte("ID3")
-var id3v2FooterSIG = []byte("3DI")
+
+// var id3v2FooterSIG = []byte("3DI")
 
 type header struct {
 	sig     []byte
@@ -93,4 +93,4 @@ func (h *header) isValidHeader() bool {
 	return bytes.Equal(h.sig, id3v2HeaderSIG)
 }
 
-func (h *header) size() uint { return uint(unsafe.Sizeof(header{})) }
+// func (h *header) size() uint { return uint(unsafe.Sizeof(header{})) }

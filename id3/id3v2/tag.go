@@ -1,22 +1,24 @@
 package id3v2
 
 import (
+	"bytes"
 	"errors"
 	"io"
 
 	"github.com/blugnu/tags/id3"
 	"github.com/blugnu/tags/id3/id3v2/id3v23"
 	"github.com/blugnu/tags/id3/id3v2/id3v24"
+	"github.com/blugnu/tags/internal/reader"
 )
 
 type Tag struct {
 	Version           id3.TagVersion
-	Location          int64  // the location of the tag in the source data
-	Size              uint32 // the total size of the tag, including any extended header, frame data and padding (but not the initial header or any footer)
-	IsExperimental    bool   // indicates that the tag is experimental (not the version, the tag itself)
-	IsUnsynchronised  bool   // this called "Unsynchronisation" in the docs, but indicates whether unsychronisation has been applied
-	HasExtendedHeader bool   // indicates whether an extended header is present
-	HasFooter         bool   // indicates the presence of a footer following the frame data and any padding
+	Location          int64 // the location of the tag in the source data
+	Size              int   // the total size of the tag, including any extended header, frame data and padding (but not the initial header or any footer)
+	IsExperimental    bool  // indicates that the tag is experimental (not the version, the tag itself)
+	IsUnsynchronised  bool  // this called "Unsynchronisation" in the docs, but indicates whether unsychronisation has been applied
+	HasExtendedHeader bool  // indicates whether an extended header is present
+	HasFooter         bool  // indicates the presence of a footer following the frame data and any padding
 	ExtendedHeader    interface{}
 	Frames            []interface{}
 }
@@ -30,13 +32,28 @@ func ReadTag(src io.ReadSeeker) (*Tag, error) {
 		return nil, err
 	}
 
-	if tag.IsUnsynchronised {
-		// TODO: apply de-unsynchronisation before reading any frames
-	}
-
-	if err := tag.readFrames(src); err != nil {
+	tagdata := make([]byte, tag.Size)
+	if n, err := src.Read(tagdata); err != nil || n < tag.Size {
 		return nil, err
 	}
+
+	// if tag.IsUnsynchronised {
+	// TODO: apply de-unsynchronisation to tagdata before reading any frames
+	// }
+
+	reader := &framereader{reader.New(bytes.NewReader(tagdata)), tag, nil}
+	for {
+		err := reader.readFrame()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+		tag.Frames = append(tag.Frames, reader.Frame)
+	}
+
+	// TODO: account/adjust for padding, size, current seek pos etc ?
 
 	return tag, nil
 }
@@ -52,7 +69,7 @@ func (tag *Tag) readHeader(src io.ReadSeeker) error {
 	// These may be "unknown" and zero for invalid or unsupported tags
 	// but that's a valid outcome in that case
 	tag.Version = h.getVersion()
-	tag.Size = h.tagSize
+	tag.Size = int(h.tagSize)
 
 	// If we didn't get a read error but failed to find a valid
 	// header, then there is no tag here
@@ -96,9 +113,5 @@ func (tag *Tag) readHeader(src io.ReadSeeker) error {
 		}
 	}
 
-	return nil
-}
-
-func (tag *Tag) readFrames(src io.ReadSeeker) error {
 	return nil
 }
