@@ -2,6 +2,7 @@ package id3v2
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"unsafe"
 
@@ -52,6 +53,19 @@ func (h *header) read(src io.ReadSeeker) error {
 	if err != nil {
 		return err
 	}
+
+	// In the unlikely event that we have a v2.2.0 tag with the compression flag set
+	// we return an UnsupportedTag error
+	if h.version.major == 2 && h.flags&0x40 > 0 {
+		return id3.UnsupportedTag{Reason: "2.2.0 tag with compression"}
+	}
+
+	// In the similarly unlikely even of encountering an IDv3 tag < v2.2.0 or > v2.4.0
+	// that also is an UnsupportedTag
+	if h.version.major < 2 || h.version.major > 4 {
+		return id3.UnsupportedTag{Reason: fmt.Sprintf("ID3v2.%d.%d tag not supported", h.version.major, h.version.revision)}
+	}
+
 	return nil
 }
 

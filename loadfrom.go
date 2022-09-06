@@ -8,14 +8,19 @@ import (
 	"github.com/blugnu/tags/id3/id3v2"
 )
 
+type UnsupportedTag struct {
+	*id3v2.Tag
+	error
+}
 type AudioData struct {
 	DataStart int64
 	DataSize  int64
 }
 type Metadata struct {
-	Id3v1 *id3v1.Tag
-	Id3v2 []*id3v2.Tag
-	Audio AudioData
+	Id3v1           *id3v1.Tag
+	Id3v2           []*id3v2.Tag
+	UnsupportedTags []UnsupportedTag
+	Audio           AudioData
 }
 
 func LoadFrom(src io.ReadSeeker) (*Metadata, error) {
@@ -49,15 +54,34 @@ func LoadFrom(src io.ReadSeeker) (*Metadata, error) {
 		md.Audio.DataStart, _ = src.Seek(0, io.SeekCurrent)
 
 		tag, err := id3v2.ReadTag(src)
-		if err != nil {
-			md.Audio.DataStart = 0
-			return nil, fmt.Errorf("id3v2: %w", err)
-		}
-		if tag == nil {
-			break
+		if tag != nil {
+			if err == nil {
+				// We got a tag, with no errors, so add it to the
+				// v2 tags and look for another one
+				md.Id3v2 = append(md.Id3v2, tag)
+				continue
+			}
+			// We got a tag, but also an error, so the tag is
+			// considered unsupported
+			md.UnsupportedTags = append(md.UnsupportedTags, UnsupportedTag{tag, err})
+			continue
 		}
 
-		md.Id3v2 = append(md.Id3v2, tag)
+		// No tag, but an error, something catastrophic has happened.  We can
+		// keep any tags we may have found to this point but we cannot rely
+		// on the audio positioning or size, so we clobber those before
+		// returning the error.
+		//
+		// The information in any tags extracted so far can be used, but the
+		// information cannot be written back to the source file
+		if err != nil {
+			md.Audio.DataStart = -1
+			md.Audio.DataSize = -1
+			return nil, fmt.Errorf("id3v2: %w", err)
+		}
+
+		// No error, but no tag... we're done looking for tags
+		break
 	}
 
 	// Update the audio data size to reflect any change in the determined
