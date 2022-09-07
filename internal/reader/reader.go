@@ -11,11 +11,12 @@ type reader struct {
 }
 
 type Reader interface {
-	Eof() bool
+	//	Eof() bool
 	Pos() int64
-	Rewind(int)
+	//	Rewind(int)
 	ReadByte() (byte, error)
 	ReadBytes(int) ([]byte, error)
+	ReadBytez(terminatorBytes []byte) ([]byte, error)
 	ReadString(int) (string, error)
 	ReadStringAsInt(n int) (int, error)
 	ReadSyncSafeUint32() (uint32, error)

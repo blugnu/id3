@@ -2,6 +2,7 @@ package tags
 
 import (
 	"bytes"
+	"log"
 	"testing"
 
 	"github.com/blugnu/tags/internal/testdata"
@@ -125,4 +126,59 @@ func Test_LoadFrom_ID3v24Sample(t *testing.T) {
 			t.Errorf("wanted %d, got %d", wanted, got)
 		}
 	})
+}
+
+func Test_LoadFrom_STTMP(t *testing.T) {
+
+	data, err := testdata.Asset("tagged/sttmp-media.mp3")
+	// data, err := testdata.Asset("tagged/state-independence.mp3")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	seeker := bytes.NewReader(data)
+	result, err := LoadFrom(seeker)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if result == nil {
+		t.Fatal("LoadFrom() returned nil")
+	}
+
+	t.Run("has no Id3v1 tag", func(t *testing.T) {
+		if result.Id3v1 != nil {
+			t.Error("got unexpected v1 tag")
+		}
+	})
+
+	t.Run("has one v2 tag", func(t *testing.T) {
+		if len(result.Id3v2) != 1 {
+			t.Fatalf("wanted one v2 tags, got %d", len(result.Id3v2))
+		}
+	})
+
+	tag := result.Id3v2[0]
+	apic := tag.Find("APIC")
+
+	t.Run("has a picture", func(t *testing.T) {
+		if apic == nil {
+			t.Fatal("expected APIC frame present")
+		}
+	})
+
+	t.Run("picture has data", func(t *testing.T) {
+		if len(apic.Picture.Data) == 0 {
+			t.Errorf("APIC picture data not present")
+		}
+	})
+
+	for _, frame := range tag.Frames {
+		log.Printf("%s : %d bytes @ %d\n", frame.ID, frame.Size, frame.Location)
+	}
+	for _, frame := range tag.Frames {
+		if frame.Text != nil {
+			log.Printf("%s : %s\n", frame.ID, *frame.Text)
+		}
+	}
 }

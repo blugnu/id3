@@ -98,7 +98,7 @@ func originalSampleMp3() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "original/sample.mp3", size: 55170, mode: os.FileMode(420), modTime: time.Unix(1662365308, 0)}
+	info := bindataFileInfo{name: "original/sample.mp3", size: 55170, mode: os.FileMode(436), modTime: time.Unix(1662341856, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -118,7 +118,7 @@ func taggedSampleId3v11Mp3() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "tagged/sample.id3v11.mp3", size: 55298, mode: os.FileMode(420), modTime: time.Unix(1662341856, 0)}
+	info := bindataFileInfo{name: "tagged/sample.id3v11.mp3", size: 55298, mode: os.FileMode(436), modTime: time.Unix(1662341856, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -138,7 +138,7 @@ func taggedSampleId3v22Mp3() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "tagged/sample.id3v22.mp3", size: 56204, mode: os.FileMode(420), modTime: time.Unix(1662341856, 0)}
+	info := bindataFileInfo{name: "tagged/sample.id3v22.mp3", size: 56204, mode: os.FileMode(436), modTime: time.Unix(1662341856, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -158,7 +158,7 @@ func taggedSampleId3v23Mp3() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "tagged/sample.id3v23.mp3", size: 56204, mode: os.FileMode(420), modTime: time.Unix(1662341856, 0)}
+	info := bindataFileInfo{name: "tagged/sample.id3v23.mp3", size: 56204, mode: os.FileMode(436), modTime: time.Unix(1662341856, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -178,7 +178,7 @@ func taggedSampleId3v24Mp3() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "tagged/sample.id3v24.mp3", size: 56204, mode: os.FileMode(420), modTime: time.Unix(1662341856, 0)}
+	info := bindataFileInfo{name: "tagged/sample.id3v24.mp3", size: 56204, mode: os.FileMode(436), modTime: time.Unix(1662341856, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }

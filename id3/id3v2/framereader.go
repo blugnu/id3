@@ -2,7 +2,7 @@ package id3v2
 
 import (
 	"bytes"
-	"errors"
+	"fmt"
 	"io"
 	"strings"
 
@@ -21,6 +21,7 @@ func (reader *framereader) readFrame() error {
 	var id string
 	var size int
 	var flags uint16
+	loc := reader.Pos()
 
 	err := reader.readHeader(&id, &size, &flags)
 	if err != nil {
@@ -28,8 +29,9 @@ func (reader *framereader) readFrame() error {
 	}
 
 	reader.Frame = &frame.Frame{
-		ID:   id,
-		Size: size,
+		ID:       id,
+		Size:     size,
+		Location: loc,
 	}
 	parseFlags[reader.Tag.Version](reader.Frame, flags)
 
@@ -62,11 +64,6 @@ func (reader *framereader) readFrame() error {
 	return nil
 }
 
-func (reader *framereader) readPictureFrame() error {
-	return reader.readUnknownFrame()
-	return errors.New("not implemented")
-}
-
 func (reader *framereader) readCommentFrame() error {
 	if err := reader.readTextEncoding(); err != nil {
 		return err
@@ -79,7 +76,7 @@ func (reader *framereader) readCommentFrame() error {
 		return err
 	}
 
-	el := bytes.Split(buf, frame.NullTerm[*reader.TextEncoding])
+	el := bytes.Split(buf, reader.TextEncoding.Terminator())
 
 	desc, err := reader.DecodeString(el[0])
 	if err != nil {
@@ -95,28 +92,65 @@ func (reader *framereader) readCommentFrame() error {
 	return nil
 }
 
-func (reader *framereader) readUserDefinedTextFrame() error {
+func (reader *framereader) readPictureFrame() error {
 	if err := reader.readTextEncoding(); err != nil {
 		return err
 	}
-	buf, err := reader.ReadBytes(reader.Frame.Size - 1) // TextEncoding = 1 byte
+
+	enc := frame.Iso88591
+	buf, err := reader.ReadBytez(enc.Terminator())
+	if err != nil {
+		return err
+	}
+	mime, err := enc.Decode(buf)
+	if err != nil {
+		return err
+	}
+	lenImageType := len(buf) + 1
+
+	b, err := reader.ReadByte()
+	if err != nil {
+		return err
+	}
+	if b > byte(frame.MaxPictureType) {
+		return fmt.Errorf("unsupported picture type (%v)", b)
+	}
+	pictureType := frame.PictureType(b)
+
+	enc = *reader.TextEncoding
+	buf, err = reader.ReadBytez(enc.Terminator())
+	if err != nil {
+		return err
+	}
+	description, err := enc.Decode(buf)
+	if err != nil {
+		return err
+	}
+	lenDescription := len(buf) + len(enc.Terminator())
+
+	data, err := reader.ReadBytes(reader.Frame.Size - (1 + lenImageType + 1 + lenDescription))
 	if err != nil {
 		return err
 	}
 
-	el := bytes.Split(buf, frame.NullTerm[*reader.TextEncoding])
-
-	desc, err := reader.DecodeString(el[0])
-	if err != nil {
-		return err
+	mime = strings.ToLower(mime)
+	switch mime {
+	case "gif":
+		mime = "image/gif"
+	case "png":
+		mime = "image/png"
+	case "jpg":
+	case "jpeg":
+		mime = "image/jpeg"
 	}
-	comment, err := reader.DecodeString(el[1])
-	if err != nil {
-		return err
+
+	reader.Frame.Picture = &frame.Picture{
+		MimeType:    mime,
+		PictureType: pictureType,
+		Description: description,
+		Data:        data,
 	}
 
-	reader.Frame.Description = &desc
-	reader.Frame.Text = &comment
 	return nil
 }
 
@@ -146,6 +180,31 @@ func (reader *framereader) readUnknownFrame() error {
 	reader.Frame.UnknownData = data
 	return nil
 
+}
+
+func (reader *framereader) readUserDefinedTextFrame() error {
+	if err := reader.readTextEncoding(); err != nil {
+		return err
+	}
+	buf, err := reader.ReadBytes(reader.Frame.Size - 1) // TextEncoding = 1 byte
+	if err != nil {
+		return err
+	}
+
+	el := bytes.Split(buf, reader.TextEncoding.Terminator())
+
+	desc, err := reader.DecodeString(el[0])
+	if err != nil {
+		return err
+	}
+	comment, err := reader.DecodeString(el[1])
+	if err != nil {
+		return err
+	}
+
+	reader.Frame.Description = &desc
+	reader.Frame.Text = &comment
+	return nil
 }
 
 func (reader *framereader) readHeader(id *string, size *int, flags *uint16) error {
