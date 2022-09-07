@@ -43,3 +43,16 @@ func (e UnsupportedVersionError) Error() string {
 	}
 	return "unsupported version"
 }
+
+type InsufficientData struct {
+	Needed int
+	Have   int
+	Text   string
+}
+
+func (e InsufficientData) Error() string {
+	if e.Text != "" {
+		return fmt.Sprintf("insufficient data (needed %d bytes, have only %d): %s", e.Needed, e.Have, e.Text)
+	}
+	return fmt.Sprintf("insufficient data (needed %d bytes, have only %d)", e.Needed, e.Have)
+}
