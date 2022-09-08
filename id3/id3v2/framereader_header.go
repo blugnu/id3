@@ -45,30 +45,6 @@ func (header *framereader) readHeader(id *string, size *int, flags *uint16) erro
 	return nil
 }
 
-func (reader *framereader) parseHeaderFlags(flags uint16) {
-	frame := reader.Frame
-
-	switch reader.Tag.Version {
-	case id3.Id3v23:
-		frame.PreserveWhenTagAltered = flags&frameheader.v230flag.tagAlterPreservation > 0
-		frame.PreserveWhenFileAltered = flags&frameheader.v230flag.fileAlterPreservation > 0
-		frame.IsReadOnly = flags&frameheader.v230flag.readonly > 0
-		frame.IsCompressed = flags&frameheader.v230flag.compression > 0
-		frame.IsEncrypted = flags&frameheader.v230flag.encryption > 0
-		frame.IsGrouped = flags&frameheader.v230flag.grouping > 0
-
-	case id3.Id3v24:
-		frame.PreserveWhenTagAltered = flags&frameheader.v240flag.tagAlterPreservation > 0
-		frame.PreserveWhenFileAltered = flags&frameheader.v240flag.fileAlterPreservation > 0
-		frame.IsReadOnly = flags&frameheader.v240flag.readonly > 0
-		frame.IsGrouped = flags&frameheader.v240flag.grouping > 0
-		frame.IsCompressed = flags&frameheader.v240flag.compression > 0
-		frame.IsEncrypted = flags&frameheader.v240flag.encryption > 0
-		frame.IsUnsynchronised = flags&frameheader.v240flag.unsynchronisation > 0
-		frame.HasDataLength = flags&frameheader.v240flag.datalength > 0
-	}
-}
-
 func (tag *framereader) isValidId(id []byte) bool {
 	// the id must be of the correct length
 	if len(id) != idLen[tag.Version] {
@@ -84,4 +60,31 @@ func (tag *framereader) isValidId(id []byte) bool {
 	}
 
 	return true
+}
+
+func parseFlags(tagver id3.TagVersion, flags uint16) *FrameFlags {
+	switch tagver {
+	case id3.Id3v23:
+		return &FrameFlags{
+			PreserveWhenTagAltered:  flags&frameheader.v230flag.tagAlterPreservation > 0,
+			PreserveWhenFileAltered: flags&frameheader.v230flag.fileAlterPreservation > 0,
+			IsReadOnly:              flags&frameheader.v230flag.readonly > 0,
+			IsCompressed:            flags&frameheader.v230flag.compression > 0,
+			IsEncrypted:             flags&frameheader.v230flag.encryption > 0,
+			IsGrouped:               flags&frameheader.v230flag.grouping > 0,
+		}
+	case id3.Id3v24:
+		return &FrameFlags{
+			PreserveWhenTagAltered:  flags&frameheader.v240flag.tagAlterPreservation > 0,
+			PreserveWhenFileAltered: flags&frameheader.v240flag.fileAlterPreservation > 0,
+			IsReadOnly:              flags&frameheader.v240flag.readonly > 0,
+			IsGrouped:               flags&frameheader.v240flag.grouping > 0,
+			IsCompressed:            flags&frameheader.v240flag.compression > 0,
+			IsEncrypted:             flags&frameheader.v240flag.encryption > 0,
+			IsUnsynchronised:        flags&frameheader.v240flag.unsynchronisation > 0,
+			HasDataLength:           flags&frameheader.v240flag.datalength > 0,
+		}
+	default:
+		return nil
+	}
 }

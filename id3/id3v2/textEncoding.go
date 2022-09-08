@@ -17,25 +17,15 @@ const (
 	Utf16
 	Utf16BE
 	Utf8
+	UnknownTextEncoding = 0xff
 )
 
-func TextEncodingFromByte(b byte) *TextEncoding {
-	enc := TextEncoding(b)
-	if enc > Utf8 {
-		return nil
-	}
-	return &enc
+func (enc TextEncoding) isValid() bool {
+	return enc <= Utf8
 }
 
-var term = map[TextEncoding][]byte{
-	Iso88591: {0x00},
-	Utf8:     {0x00},
-	Utf16:    {0x00, 0x00},
-	Utf16BE:  {0x00, 0x00},
-}
-
-func (enc *TextEncoding) Decode(buf []byte) (string, error) {
-	switch *enc {
+func (enc TextEncoding) Decode(buf []byte) (string, error) {
+	switch enc {
 	case Iso88591:
 		dec := charmap.ISO8859_1.NewDecoder()
 		decoded, err := dec.Bytes(buf)
@@ -58,12 +48,15 @@ func (enc *TextEncoding) Decode(buf []byte) (string, error) {
 	case Utf8:
 		return string(buf), nil
 	default:
-		return "", fmt.Errorf("text encoding (%v) not supported", *enc)
+		return "", fmt.Errorf("text encoding (%v) not supported", enc)
 	}
 }
 
-func (enc *TextEncoding) Terminator() []byte {
-	return term[*enc]
+var zlen = map[TextEncoding]int{
+	Iso88591: 1,
+	Utf8:     1,
+	Utf16:    2,
+	Utf16BE:  2,
 }
 
 func toUint16s(buf []byte) ([]uint16, error) {

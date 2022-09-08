@@ -26,7 +26,7 @@ func (tag *tagreader) readTag() error {
 		// and should make sure we position at the end of the tag when
 		// we're done, whatever happens
 		if size > 0 {
-			tag.Seek(pos+int64(size)+tagHeaderSize, io.SeekStart)
+			tag.Seek(pos+tagHeaderSize+int64(size), io.SeekStart)
 		}
 	}()
 
