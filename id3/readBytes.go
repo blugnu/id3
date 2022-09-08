@@ -2,6 +2,7 @@ package id3
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 )
 
@@ -11,7 +12,7 @@ func (r *reader) ReadByte() (byte, error) {
 	n, err := io.ReadFull(r.Reader, b)
 	r.curr += int64(n)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("ReadByte: %w", err)
 	}
 	return b[0], nil
 }
@@ -27,7 +28,7 @@ func (r *reader) ReadBytes(n int) ([]byte, error) {
 	if n > max {
 		b := &bytes.Buffer{}
 		if _, err := io.CopyN(b, r.Reader, int64(n)); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("ReadBytes (> max): %w", err)
 		}
 		r.curr += int64(n)
 		if r.curr > r.max {
@@ -40,7 +41,7 @@ func (r *reader) ReadBytes(n int) ([]byte, error) {
 	nr, err := io.ReadFull(r.Reader, b)
 	r.curr += int64(nr)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("ReadBytes: %w", err)
 	}
 	return b, nil
 }
@@ -63,7 +64,7 @@ func (r *reader) readBytez(terminator byte) ([]byte, error) {
 	for {
 		b, err := r.ReadByte()
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("readBytez: %w", err)
 		}
 		if b == terminator {
 			break
@@ -77,11 +78,12 @@ func (r *reader) readBytez(terminator byte) ([]byte, error) {
 // Note that this is NOT reading a null-terminated string only a
 // double null-terminated byte buffer.
 func (r *reader) readBytezz(terminator []byte) ([]byte, error) {
+	tlen := len(terminator)
 	buf := []byte{}
 	for {
-		chunk, err := r.ReadBytes(len(terminator))
+		chunk, err := r.ReadBytes(tlen)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("readBytezz: %w", err)
 		}
 		if bytes.Equal(chunk, terminator) {
 			break

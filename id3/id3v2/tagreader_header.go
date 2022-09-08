@@ -15,7 +15,7 @@ func (header *tagreader) readHeader(pos *int64, majorver *byte, revision *byte, 
 	if err != nil {
 		return err
 	}
-	if !bytes.Equal(sig, id3v2HeaderSIG) {
+	if !bytes.Equal(sig, []byte(id3v2HeaderSIG)) {
 		return id3.NoTag{AtPos: *pos}
 	}
 

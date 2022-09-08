@@ -45,7 +45,11 @@ func (enc *TextEncoding) Decode(buf []byte) (string, error) {
 		return string(decoded), nil
 
 	case Utf16:
-		decoded := utf16.Decode(toUint16s(buf))
+		wide, err := toUint16s(buf)
+		if err != nil {
+			return "", err
+		}
+		decoded := utf16.Decode(wide)
 		return string(decoded), nil
 
 	case Utf16BE:
@@ -62,12 +66,12 @@ func (enc *TextEncoding) Terminator() []byte {
 	return term[*enc]
 }
 
-func toUint16s(buf []byte) []uint16 {
+func toUint16s(buf []byte) ([]uint16, error) {
 	if len(buf)%2 != 0 {
-		panic(fmt.Sprintf("buffer must contain an even number of bytes (found %d)", len(buf)))
+		return nil, fmt.Errorf("%d bytes in buffer (even number required)", len(buf))
 	}
 	if len(buf) == 0 {
-		return []uint16{}
+		return []uint16{}, nil
 	}
 
 	lebom := []byte{0xff, 0xfe}
@@ -89,5 +93,5 @@ func toUint16s(buf []byte) []uint16 {
 	for i := 0; i < len(buf)/2; i++ {
 		chars = append(chars, binary.LittleEndian.Uint16(buf[i*2:i*2+2]))
 	}
-	return chars
+	return chars, nil
 }

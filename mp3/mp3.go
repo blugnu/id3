@@ -43,13 +43,13 @@ func FromBytes(buf []byte) (*mp3, error) {
 func FromFile(filename string) (*mp3, error) {
 	file, err := os.Open(filename)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("FromFile: %w", err)
 	}
 	defer file.Close()
 
 	mp3, err := read(file)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("read: %w", err)
 	}
 	mp3.filename = filename
 
@@ -81,15 +81,15 @@ func read(src io.ReadSeeker) (*mp3, error) {
 		mp3.audio.size -= id3v1.TagSize
 	}
 
-	// reposition at the start of the file and read any ID3v2 tags,
-	// updating the audio data start position as we go (audio data follows
-	// immediately after any id3v2 tags at the start of the file)
+	// reposition at the start of the file and read any ID3v2 tags
 	src.Seek(0, io.SeekStart)
 	for {
-		mp3.audio.location, _ = src.Seek(0, io.SeekCurrent)
-
 		tag, err := id3v2.ReadTag(src)
 		if tag != nil {
+			// Update the audio data location and size to account for the tag
+			mp3.audio.location = tag.Location + int64(tag.Size)
+			mp3.audio.size -= int64(tag.Size)
+
 			if err == nil {
 				// We got a tag, with no errors, so add it to the
 				// v2 tags and look for another one
@@ -118,22 +118,34 @@ func read(src io.ReadSeeker) (*mp3, error) {
 		break
 	}
 
-	// Update the audio data size to reflect any change in the determined
-	// audio data start position
-	mp3.audio.size -= mp3.audio.location
-
 	// TODO: Read any id3v2 tags located at the END of the file, updating
 	// the audio data size to reflect any
 
+	// reposition at the END of the file and check for a tag footer
+
+	pos := int64(-10)
+	for {
+		src.Seek(pos, io.SeekEnd)
+		footer, err := id3v2.ReadFooter(src)
+		if err != nil {
+			mp3.audio = noaudio
+			return mp3, fmt.Errorf("read [footer]: %w", err)
+		}
+		if footer == nil {
+			break
+		}
+		println("something's afoot!")
+	}
+
 	// load the audio data
 	audioBytesRead := 0
-	_, err = src.Seek(mp3.audio.location, io.SeekCurrent)
+	_, err = src.Seek(mp3.audio.location, io.SeekStart)
 	if err == nil {
 		mp3.audio.data = make([]byte, mp3.audio.size)
 		audioBytesRead, err = src.Read(mp3.audio.data)
 	}
 
-	if int64(audioBytesRead) < mp3.audio.size {
+	if err != nil || int64(audioBytesRead) < mp3.audio.size {
 		mp3.audio = noaudio
 	}
 

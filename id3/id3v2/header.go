@@ -60,8 +60,7 @@ var tagVersion = map[byte]id3.TagVersion{
 	0x04: id3.Id3v24,
 }
 
-var id3v2HeaderSIG = []byte("ID3")
-
-// var id3v2FooterSIG = []byte("3DI")
+const id3v2HeaderSIG = "ID3"
+const id3v2FooterSIG = "3DI"
 
 const tagHeaderSize = 10

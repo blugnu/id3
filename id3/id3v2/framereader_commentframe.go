@@ -1,30 +1,21 @@
 package id3v2
 
-import (
-	"bytes"
-)
+import "fmt"
 
 func (frame *framereader) readComment() error {
 	if err := frame.readTextEncoding(); err != nil {
-		return err
+		return fmt.Errorf("readComment: %w", err)
 	}
 	if err := frame.readLanguageCode(); err != nil {
-		return err
-	}
-	buf, err := frame.ReadBytes(frame.Frame.Size - 4) // TextEncoding + Language code = 4 bytes
-	if err != nil {
-		return err
+		return fmt.Errorf("readComment: %w", err)
 	}
 
-	el := bytes.Split(buf, frame.TextEncoding.Terminator())
+	var desc string
+	var comment string
 
-	desc, err := frame.DecodeString(el[0])
+	err := frame.ReadSzAndString(&desc, &comment, frame.Frame.Size-4) // TextEncoding + Language code = 4 bytes
 	if err != nil {
-		return err
-	}
-	comment, err := frame.DecodeString(el[1])
-	if err != nil {
-		return err
+		return fmt.Errorf("readComment: %w", err)
 	}
 
 	frame.Description = &desc

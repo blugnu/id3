@@ -1,6 +1,7 @@
 package id3v2
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/blugnu/tags/id3"
@@ -91,5 +92,31 @@ func (reader *framereader) readTextEncoding() error {
 		return err
 	}
 	reader.Frame.TextEncoding = TextEncodingFromByte(b)
+	return nil
+}
+
+func (reader *framereader) ReadSzAndString(sz *string, s *string, totalbytes int) error {
+
+	enc := reader.Frame.TextEncoding
+	terminator := enc.Terminator()
+
+	buf, err := reader.ReadBytez(terminator)
+	if err != nil {
+		return fmt.Errorf("ReadSzAndString [sz]: %w", err)
+	}
+	*sz, err = enc.Decode(buf)
+	if err != nil {
+		return fmt.Errorf("ReadSzAndString [sz]: %w", err)
+	}
+
+	buf, err = reader.ReadBytes(totalbytes - (len(buf) + len(terminator)))
+	if err != nil {
+		return fmt.Errorf("ReadSzAndString [s]]: %w", err)
+	}
+	*s, err = enc.Decode(buf)
+	if err != nil {
+		return fmt.Errorf("ReadSzAndString [value]: %w", err)
+	}
+
 	return nil
 }

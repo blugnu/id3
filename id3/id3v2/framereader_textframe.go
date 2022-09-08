@@ -1,7 +1,7 @@
 package id3v2
 
 import (
-	"bytes"
+	"fmt"
 )
 
 func (frame *framereader) readText() error {
@@ -16,7 +16,7 @@ func (frame *framereader) readText() error {
 
 	s, err := frame.DecodeString(buf)
 	if err != nil {
-		return err
+		return fmt.Errorf("readText: %w", err)
 	}
 
 	frame.Text = &s
@@ -28,24 +28,17 @@ func (frame *framereader) readUserDefinedText() error {
 	if err := frame.readTextEncoding(); err != nil {
 		return err
 	}
-	buf, err := frame.ReadBytes(frame.Frame.Size - 1) // TextEncoding = 1 byte
-	if err != nil {
-		return err
-	}
 
-	el := bytes.Split(buf, frame.TextEncoding.Terminator())
+	var desc string
+	var value string
 
-	desc, err := frame.DecodeString(el[0])
+	err := frame.ReadSzAndString(&desc, &value, frame.Frame.Size-1)
 	if err != nil {
-		return err
-	}
-	comment, err := frame.DecodeString(el[1])
-	if err != nil {
-		return err
+		return fmt.Errorf("readUserDefinedText: %w", err)
 	}
 
 	frame.Description = &desc
-	frame.Text = &comment
+	frame.Text = &value
 
 	return nil
 }

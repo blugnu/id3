@@ -58,9 +58,10 @@ func listtags(path string, files []string, maxlen int) {
 	println()
 	println(path)
 	for _, filename := range files {
-		print(fmt.Sprintf(filenamespec, filename))
+		fmt.Printf(filenamespec, filename)
 		mp3, err := mp3.FromFile(filepath.Join(path, filename))
 		if err != nil {
+			fmt.Printf("\nERROR: %s\n", err)
 			return
 		}
 

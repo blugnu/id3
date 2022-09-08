@@ -2,6 +2,7 @@ package id3v2
 
 import (
 	"errors"
+	"fmt"
 )
 
 type Picture struct {
@@ -37,5 +38,9 @@ func (frame *Frame) DecodeString(buf []byte) (string, error) {
 	if frame.TextEncoding == nil {
 		return "", errors.New("no text encoding")
 	}
-	return frame.TextEncoding.Decode(buf)
+	s, err := frame.TextEncoding.Decode(buf)
+	if err != nil {
+		return "", fmt.Errorf("Frame(%s).DecodeString: %w", frame.ID, err)
+	}
+	return s, nil
 }
