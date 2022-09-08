@@ -78,8 +78,8 @@ func Test_Id3v1(t *testing.T) {
 	})
 
 	t.Run("has expected genre name", func(t *testing.T) {
-		wanted := id3.GenreName[id3.Jazz]
-		got := id3.GenreName[tag.Genre]
+		wanted := id3.Jazz.String()
+		got := tag.Genre.String()
 		if wanted != got {
 			t.Errorf("wanted %q, got %q", wanted, got)
 		}

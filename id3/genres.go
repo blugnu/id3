@@ -202,7 +202,7 @@ const (
 	NoGenre = 255
 )
 
-var GenreName = map[Genre]string{
+var gs = map[Genre]string{
 	Blues:            "Blues",
 	ClassicRock:      "Classic Rock",
 	Country:          "Country",
@@ -398,4 +398,12 @@ var GenreName = map[Genre]string{
 	Dubstep:           "Dubstep",
 	GarageRock:        "Garage Rock",
 	Psybient:          "Psybient",
+}
+
+func (g Genre) String() string {
+	if s, ok := gs[g]; !ok {
+		return "<unknown>"
+	} else {
+		return s
+	}
 }

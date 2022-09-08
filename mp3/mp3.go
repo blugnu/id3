@@ -1,4 +1,4 @@
-package tags
+package mp3
 
 import (
 	"bytes"
