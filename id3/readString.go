@@ -1,4 +1,4 @@
-package reader
+package id3
 
 import (
 	"strconv"

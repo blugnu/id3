@@ -1,8 +1,12 @@
-package reader
+package id3
 
 import (
 	"unsafe"
 )
+
+// the code in this file is currently un-used but remains present ready for the
+// day that someone is able to test this code on a big-endian architecture
+// and confirm for certain whether it is needed or not
 
 type byteOrder = byte
 
@@ -21,7 +25,7 @@ var endianness = func() byteOrder {
 	return bigEndian
 }()
 
-// Returns the specified byte slice with the order of the bytes reversed
+// Returns a copy of the specified byte slice with the order of the bytes reversed
 func reverse(bytes []byte) []byte {
 	result := make([]byte, len(bytes))
 	for ix, b := range bytes {

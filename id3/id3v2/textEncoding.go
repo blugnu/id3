@@ -1,4 +1,4 @@
-package frame
+package id3v2
 
 import (
 	"bytes"

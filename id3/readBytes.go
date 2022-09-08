@@ -1,4 +1,4 @@
-package reader
+package id3
 
 import (
 	"bytes"
@@ -18,6 +18,10 @@ func (r *reader) ReadByte() (byte, error) {
 
 // Reads the specified number of bytes and returns the result in a slice
 func (r *reader) ReadBytes(n int) ([]byte, error) {
+	if n == 0 {
+		return []byte{}, nil
+	}
+
 	const max = 10 << 20
 
 	if n > max {

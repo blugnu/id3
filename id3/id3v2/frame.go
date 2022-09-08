@@ -1,9 +1,15 @@
-package frame
+package id3v2
 
 import (
-	"bytes"
 	"errors"
 )
+
+type Picture struct {
+	MimeType    string
+	PictureType PictureType
+	Description string
+	Data        []byte
+}
 
 type Frame struct {
 	ID                      string
@@ -25,22 +31,6 @@ type Frame struct {
 	Picture      *Picture      // used only by PIC/APIC frames, otherwise nil
 
 	UnknownData []byte // used to preserve data for otherwise unknown frame-types, otherwise nil (empty = unknown data of zero length)
-}
-
-func IsValidId(id []byte) bool {
-	zeroes := make([]byte, len(id))
-	if bytes.Equal(id, zeroes) {
-		return false
-	}
-
-	for _, b := range id {
-		if (b >= 'A' && b <= 'Z') || (b >= '0' && b <= '9') {
-			continue
-		}
-		return false
-	}
-
-	return true
 }
 
 func (frame *Frame) DecodeString(buf []byte) (string, error) {

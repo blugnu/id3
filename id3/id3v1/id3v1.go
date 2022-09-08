@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/blugnu/tags/id3"
-	"github.com/blugnu/tags/internal/reader"
 )
 
 const TagSize = 128
@@ -41,7 +40,7 @@ func (tag *Tag) read(src io.ReadSeeker) error {
 		return err
 	}
 
-	reader := reader.New(src)
+	reader := id3.NewReader(src)
 
 	if tag, err := reader.ReadString(3); err != nil {
 		return err

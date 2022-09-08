@@ -1,4 +1,4 @@
-package frame
+package id3v2
 
 type PictureType byte
 
@@ -25,5 +25,4 @@ const (
 	ArtistLogo
 	StudioLogo
 )
-
-const MaxPictureType = StudioLogo
+const maxPictureType = StudioLogo

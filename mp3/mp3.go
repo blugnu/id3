@@ -76,10 +76,12 @@ func read(src io.ReadSeeker) (*mp3, error) {
 		return nil, fmt.Errorf("id3v1: %w", err)
 	}
 
-	// We found a v1 tag, so adjust the audio data size to account for it
-	mp3.audio.size -= id3v1.TagSize
+	// if we found a v1 tag adjust the audio data size to account for it
+	if mp3.Id3v1 != nil {
+		mp3.audio.size -= id3v1.TagSize
+	}
 
-	// Now reposition at the start of the file and read any ID3v2 tags,
+	// reposition at the start of the file and read any ID3v2 tags,
 	// updating the audio data start position as we go (audio data follows
 	// immediately after any id3v2 tags at the start of the file)
 	src.Seek(0, io.SeekStart)
@@ -120,7 +122,7 @@ func read(src io.ReadSeeker) (*mp3, error) {
 	// audio data start position
 	mp3.audio.size -= mp3.audio.location
 
-	// TODO: Read any id3v2 tags located at the end of the file, updating
+	// TODO: Read any id3v2 tags located at the END of the file, updating
 	// the audio data size to reflect any
 
 	// load the audio data
