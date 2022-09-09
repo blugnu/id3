@@ -1,4 +1,4 @@
-package id3
+package id3reader
 
 import "fmt"
 

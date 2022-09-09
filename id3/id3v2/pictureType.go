@@ -25,4 +25,3 @@ const (
 	ArtistLogo
 	StudioLogo
 )
-const maxPictureType = StudioLogo

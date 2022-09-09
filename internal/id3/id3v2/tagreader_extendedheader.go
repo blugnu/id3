@@ -101,7 +101,7 @@ func (tag *tagreader) readExtendedHeader240() error {
 	return nil
 }
 
-// Reads a flag and returns the number of bytes of data used by that flag
+// Reads data for the flag identified by the flag bit specified
 func (tag *tagreader) readFlag(bit byte) error {
 	// Every flag consists of:
 	// - a byte identifying the length of any additional data for the flag

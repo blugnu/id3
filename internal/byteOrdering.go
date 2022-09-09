@@ -1,9 +1,11 @@
-package id3
+package id3reader
 
 import (
 	"unsafe"
 )
 
+// NOTE
+//
 // the code in this file is currently un-used but remains present ready for the
 // day that someone is able to test this code on a big-endian architecture
 // and confirm for certain whether it is needed or not

@@ -3,6 +3,8 @@ package id3v2
 import (
 	"fmt"
 	"strings"
+
+	"github.com/blugnu/tags/id3/id3v2"
 )
 
 func (frame *framereader) readPictureFrame() error {
@@ -20,10 +22,10 @@ func (frame *framereader) readPictureFrame() error {
 	if err != nil {
 		return err
 	}
-	if b > byte(maxPictureType) {
+	if b > byte(id3v2.StudioLogo) {
 		return fmt.Errorf("unsupported picture type (%v)", b)
 	}
-	pictureType := PictureType(b)
+	pictureType := id3v2.PictureType(b)
 
 	description, ndescbytes, err := frame.readStringz(enc)
 	if err != nil {
@@ -46,7 +48,7 @@ func (frame *framereader) readPictureFrame() error {
 		mime = "image/jpeg"
 	}
 
-	frame.Data = Picture{
+	frame.Data = id3v2.Picture{
 		MimeType:    mime,
 		PictureType: pictureType,
 		Description: description,

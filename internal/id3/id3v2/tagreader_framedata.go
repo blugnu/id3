@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"github.com/blugnu/tags/id3"
+	id3reader "github.com/blugnu/tags/internal/id3/reader"
 )
 
 func (tag *tagreader) readFrames(framedata []byte) error {
@@ -15,7 +16,7 @@ func (tag *tagreader) readFrames(framedata []byte) error {
 	//
 	// so we initially get a framereader with NO ReadFrameSize func set ...
 	reader := &framereader{
-		id3.NewBytesReader(framedata),
+		id3reader.NewBytesReader(framedata),
 		tag.Tag,
 		nil,
 		nil,

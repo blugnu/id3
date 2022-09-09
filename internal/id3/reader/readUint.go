@@ -1,4 +1,4 @@
-package id3
+package id3reader
 
 // Reads a uint16 from a 2-byte field
 func (r *reader) ReadUint16() (uint16, error) {

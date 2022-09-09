@@ -5,6 +5,7 @@ import (
 	"io"
 
 	"github.com/blugnu/tags/id3"
+	"github.com/blugnu/tags/id3/id3v2"
 )
 
 func (header *framereader) readHeader(id *string, size *int, flags *uint16) error {
@@ -62,10 +63,10 @@ func (tag *framereader) isValidId(id []byte) bool {
 	return true
 }
 
-func parseFlags(tagver id3.TagVersion, flags uint16) *FrameFlags {
+func parseFlags(tagver id3.TagVersion, flags uint16) *id3v2.FrameFlags {
 	switch tagver {
 	case id3.Id3v23:
-		return &FrameFlags{
+		return &id3v2.FrameFlags{
 			PreserveWhenTagAltered:  flags&frameheader.v230flag.tagAlterPreservation > 0,
 			PreserveWhenFileAltered: flags&frameheader.v230flag.fileAlterPreservation > 0,
 			IsReadOnly:              flags&frameheader.v230flag.readonly > 0,
@@ -74,7 +75,7 @@ func parseFlags(tagver id3.TagVersion, flags uint16) *FrameFlags {
 			IsGrouped:               flags&frameheader.v230flag.grouping > 0,
 		}
 	case id3.Id3v24:
-		return &FrameFlags{
+		return &id3v2.FrameFlags{
 			PreserveWhenTagAltered:  flags&frameheader.v240flag.tagAlterPreservation > 0,
 			PreserveWhenFileAltered: flags&frameheader.v240flag.fileAlterPreservation > 0,
 			IsReadOnly:              flags&frameheader.v240flag.readonly > 0,

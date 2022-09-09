@@ -4,12 +4,29 @@ import (
 	"errors"
 	"io"
 
-	"github.com/blugnu/tags/id3"
+	"github.com/blugnu/tags/id3/id3v2"
+	id3reader "github.com/blugnu/tags/internal/id3/reader"
 )
 
 type tagreader struct {
-	id3.Reader
-	*Tag
+	id3reader.Reader
+	*id3v2.Tag
+}
+
+func ReadTag(src io.ReadSeeker) (*id3v2.Tag, error) {
+
+	reader := &tagreader{
+		Reader: id3reader.NewReader(src),
+	}
+
+	if err := reader.readTag(); err != nil {
+		if errors.Is(err, id3reader.NoTag{}) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return reader.Tag, nil
 }
 
 func (tag *tagreader) readTag() error {
@@ -38,20 +55,20 @@ func (tag *tagreader) readTag() error {
 	// information is the location, the size (excluding header) and
 	// raw tag data (INCLUDING the entire header)
 	if err != nil {
-		if errors.Is(err, id3.UnsupportedTag{}) {
+		if errors.Is(err, id3reader.UnsupportedTag{}) {
 			tag.Seek(pos, io.SeekStart)
 			data, err := tag.ReadBytes(int(size) + tagHeaderSize)
 			if err != nil {
 				return err
 			}
-			tag.Tag = &Tag{Location: pos, Size: size, raw: data}
+			tag.Tag = &id3v2.Tag{Location: pos, Size: size, RawData: data}
 		}
 		return err
 	}
 
 	// otherwise we have a valid, supported tag...
 
-	tag.Tag = &Tag{
+	tag.Tag = &id3v2.Tag{
 		Version:           tagVersion[majorver],
 		Size:              size,
 		Location:          pos,

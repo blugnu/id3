@@ -1,8 +1,6 @@
 package id3v2
 
 import (
-	"errors"
-	"io"
 	"strings"
 
 	"github.com/blugnu/tags/id3"
@@ -26,23 +24,7 @@ type Tag struct {
 	Frames []*Frame
 	// raw tag data, header, including unparsed frame data, padding etc
 	// (used to preserve unsupported tags, otherwise nil)
-	raw []byte
-}
-
-func ReadTag(src io.ReadSeeker) (*Tag, error) {
-
-	reader := &tagreader{
-		Reader: id3.NewReader(src),
-	}
-
-	if err := reader.readTag(); err != nil {
-		if errors.Is(err, id3.NoTag{}) {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	return reader.Tag, nil
+	RawData []byte
 }
 
 func (tag *Tag) Find(id string) *Frame {

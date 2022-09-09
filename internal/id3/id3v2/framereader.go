@@ -4,17 +4,18 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/blugnu/tags/id3"
+	"github.com/blugnu/tags/id3/id3v2"
+	id3reader "github.com/blugnu/tags/internal/id3/reader"
 )
 
 // signature type for funcs returning frame size
 type ReadFrameSizeFunc func() (uint32, error)
 
 type framereader struct {
-	id3.Reader        // ref to an id3 byte-level reader
-	*Tag              // ref to the tag for which the reader is reading frames
+	id3reader.Reader  // ref to an id3 byte-level reader
+	*id3v2.Tag        // ref to the tag for which the reader is reading frames
 	ReadFrameSizeFunc // ref to the function used to read frame size from the frame header
-	*Frame            // a ref to the single frame obtained by an individual call to reader.readFrame()
+	*id3v2.Frame      // a ref to the single frame obtained by an individual call to reader.readFrame()
 }
 
 func (frame *framereader) readFrame() error {
@@ -27,7 +28,7 @@ func (frame *framereader) readFrame() error {
 		return err
 	}
 
-	frame.Frame = &Frame{
+	frame.Frame = &id3v2.Frame{
 		ID:    id,
 		Size:  size,
 		Flags: parseFlags(frame.Tag.Version, flags),

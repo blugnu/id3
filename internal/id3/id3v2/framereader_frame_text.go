@@ -2,6 +2,8 @@ package id3v2
 
 import (
 	"fmt"
+
+	"github.com/blugnu/tags/id3/id3v2"
 )
 
 func (frame *framereader) readTextFrame() error {
@@ -42,7 +44,7 @@ func (frame *framereader) readUserDefinedTextFrame() error {
 		return fmt.Errorf("readUserDefinedText: %w", err)
 	}
 
-	frame.Data = UserDefinedText{
+	frame.Data = id3v2.UserDefinedText{
 		Description: d,
 		Text:        t,
 	}

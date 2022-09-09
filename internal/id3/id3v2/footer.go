@@ -4,14 +4,14 @@ import (
 	"bytes"
 	"io"
 
-	"github.com/blugnu/tags/id3"
+	id3reader "github.com/blugnu/tags/internal/id3/reader"
 )
 
 type Footer struct {
 }
 
 func ReadFooter(src io.ReadSeeker) (*Footer, error) {
-	reader := id3.NewReader(src)
+	reader := id3reader.NewReader(src)
 	sig, err := reader.ReadBytes(3)
 	if err != nil {
 		return nil, err

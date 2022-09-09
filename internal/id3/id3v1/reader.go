@@ -7,21 +7,24 @@ import (
 	"strings"
 
 	"github.com/blugnu/tags/id3"
+	"github.com/blugnu/tags/id3/id3v1"
+	id3reader "github.com/blugnu/tags/internal/id3/reader"
 )
 
-const tagSIG = "TAG"
+const SIG = "TAG"
+const TagSize = 128
 
 type reader struct {
-	id3.Reader
-	*Tag
+	id3reader.Reader
+	*id3v1.Tag
 }
 
-func ReadTag(src io.ReadSeeker) (*Tag, error) {
-	tag := &reader{id3.NewReader(src), nil}
+func ReadTag(src io.ReadSeeker) (*id3v1.Tag, error) {
+	tag := &reader{id3reader.NewReader(src), nil}
 
 	err := tag.read()
 	if err != nil {
-		if errors.Is(err, id3.NoTag{}) {
+		if errors.Is(err, id3reader.NoTag{}) {
 			return nil, nil
 		}
 		return nil, err
@@ -30,18 +33,18 @@ func ReadTag(src io.ReadSeeker) (*Tag, error) {
 }
 
 func (tag *reader) read() error {
-	_, err := tag.Seek(-128, io.SeekEnd)
+	_, err := tag.Seek(-TagSize, io.SeekEnd)
 	if err != nil {
 		return err
 	}
 
 	if sig, err := tag.readString(3); err != nil {
 		return err
-	} else if sig != tagSIG {
-		return id3.NoTag{AtPos: 0}
+	} else if sig != SIG {
+		return id3reader.NoTag{AtPos: 0}
 	}
 
-	tag.Tag = &Tag{}
+	tag.Tag = &id3v1.Tag{}
 	tag.Version = id3.Id3v1
 
 	tag.Title, err = tag.readString(30)

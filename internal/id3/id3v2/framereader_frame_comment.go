@@ -1,6 +1,10 @@
 package id3v2
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/blugnu/tags/id3/id3v2"
+)
 
 func (frame *framereader) readCommentFrame() error {
 	enc, err := frame.readTextEncoding()
@@ -21,7 +25,7 @@ func (frame *framereader) readCommentFrame() error {
 		return fmt.Errorf("readComment: %w", err)
 	}
 
-	frame.Data = Comment{
+	frame.Data = id3v2.Comment{
 		LanguageCode: lang,
 		Description:  d,
 		Comment:      c,
