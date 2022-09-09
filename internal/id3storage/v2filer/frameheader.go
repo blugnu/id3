@@ -1,10 +1,10 @@
-package id3v2
+package v2filer
 
 import "github.com/blugnu/tags/id3"
 
 // Frame Header flags
-// NOTE: 2.2.0 does not support flags in any frame header
-type _v230frmhdrflags struct {
+// NOTE: 2.2.0 does not support ANY frame header flags
+type frameheaderflagsv230 struct {
 	tagAlterPreservation  uint16
 	fileAlterPreservation uint16
 	readonly              uint16
@@ -12,7 +12,7 @@ type _v230frmhdrflags struct {
 	encryption            uint16
 	grouping              uint16
 }
-type _v240frmhdrflags struct {
+type frameheaderflagsv240 struct {
 	tagAlterPreservation  uint16
 	fileAlterPreservation uint16
 	readonly              uint16
@@ -24,10 +24,10 @@ type _v240frmhdrflags struct {
 }
 
 var frameheader = struct {
-	v230flag _v230frmhdrflags
-	v240flag _v240frmhdrflags
+	v230flag frameheaderflagsv230
+	v240flag frameheaderflagsv240
 }{
-	v230flag: _v230frmhdrflags{
+	v230flag: frameheaderflagsv230{
 		// https://id3.org/id3v2.3.0#Frame_header_flags
 		// %abc00000 ijk00000
 		tagAlterPreservation:  0x8000, // a
@@ -37,7 +37,7 @@ var frameheader = struct {
 		encryption:            0x0040, // j
 		grouping:              0x0020, // k
 	},
-	v240flag: _v240frmhdrflags{
+	v240flag: frameheaderflagsv240{
 		// https://id3.org/id3v2.4.0-structure
 		// %0abc0000 0h00kmnp
 		tagAlterPreservation:  0x4000, // a
@@ -52,8 +52,31 @@ var frameheader = struct {
 }
 
 // the required length of a frame ID for each id3v2 version
-var idLen = map[id3.TagVersion]int{
+var frameidlen = map[id3.TagVersion]int{
 	id3.Id3v22: 3,
 	id3.Id3v23: 4,
 	id3.Id3v24: 4,
+}
+
+// isValidFrameId checks the supplied []byte for only valid frame ID characters
+// (uppercase alpha and digits)
+func isValidFrameId(id []byte) bool {
+	// must consist only of A..Z or 0..9 chars
+	for _, b := range id {
+		if (b >= 'A' && b <= 'Z') || (b >= '0' && b <= '9') {
+			continue
+		}
+		return false
+	}
+	return true
+}
+
+// isNullFrameId checks the supplied []byte for any non-null bytes
+func isNullFrameId(id []byte) bool {
+	for _, b := range id {
+		if b != 0x00 {
+			return false
+		}
+	}
+	return true
 }

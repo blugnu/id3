@@ -8,8 +8,8 @@ import (
 
 	"github.com/blugnu/tags/id3/id3v1"
 	"github.com/blugnu/tags/id3/id3v2"
-	id3v1reader "github.com/blugnu/tags/internal/id3/id3v1"
-	id3v2reader "github.com/blugnu/tags/internal/id3/id3v2"
+	"github.com/blugnu/tags/internal/id3storage/v1filer"
+	"github.com/blugnu/tags/internal/id3storage/v2filer"
 )
 
 type UnsupportedTag struct {
@@ -73,7 +73,7 @@ func read(src io.ReadSeeker) (*mp3, error) {
 
 	// Read any ID3v1 tag (these are always located at the END of the
 	// file which the id3v1 reader takes care of)
-	mp3.Id3v1, err = id3v1reader.ReadTag(src)
+	mp3.Id3v1, err = v1filer.ReadTag(src)
 	if err != nil {
 		return nil, fmt.Errorf("id3v1: %w", err)
 	}
@@ -86,7 +86,7 @@ func read(src io.ReadSeeker) (*mp3, error) {
 	// reposition at the start of the file and read any ID3v2 tags
 	src.Seek(0, io.SeekStart)
 	for {
-		tag, err := id3v2reader.ReadTag(src)
+		tag, err := v2filer.ReadTag(src)
 		if tag != nil {
 			// Update the audio data location and size to account for the tag
 			mp3.audio.location = tag.Location + int64(tag.Size)
@@ -128,7 +128,7 @@ func read(src io.ReadSeeker) (*mp3, error) {
 	pos := int64(-10)
 	for {
 		src.Seek(pos, io.SeekEnd)
-		footer, err := id3v2reader.ReadFooter(src)
+		footer, err := v2filer.ReadFooter(src)
 		if err != nil {
 			mp3.audio = noaudio
 			return mp3, fmt.Errorf("read [footer]: %w", err)

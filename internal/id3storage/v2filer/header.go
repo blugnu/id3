@@ -1,4 +1,4 @@
-package id3v2
+package v2filer
 
 import (
 	"github.com/blugnu/tags/id3"
@@ -21,33 +21,33 @@ var headerflags = struct {
 
 // Extended Header flags
 // NOTE: 2.2.0 does not support any extended header
-type _v230exthdrflagbits struct {
+type extendedheaderflagsv230 struct {
 	crc uint16
 }
-type _v240exthdrflagbits struct {
+type extendedheaderflagsv240 struct {
 	update       byte
 	crc          byte
 	restrictions byte
 }
 
 var extendedheader = struct {
-	v230flag _v230exthdrflagbits
-	v240flag _v240exthdrflagbits
+	v230flag extendedheaderflagsv230
+	v240flag extendedheaderflagsv240
 }{
-	v230flag: _v230exthdrflagbits{crc: 0x8000},
-	v240flag: _v240exthdrflagbits{
+	v230flag: extendedheaderflagsv230{
+		crc: 0x8000,
+	},
+	v240flag: extendedheaderflagsv240{
 		update:       0x40,
 		crc:          0x20,
 		restrictions: 0x10,
 	},
 }
 
-type _v240flaginfo struct {
+var v240flaginfo = map[byte]struct {
 	datalen byte
 	name    string
-}
-
-var v240flaginfo = map[byte]_v240flaginfo{
+}{
 	extendedheader.v240flag.update:       {datalen: 0, name: "update"},
 	extendedheader.v240flag.crc:          {datalen: 5, name: "crc"},
 	extendedheader.v240flag.restrictions: {datalen: 1, name: "restrictions"},
@@ -60,7 +60,6 @@ var tagVersion = map[byte]id3.TagVersion{
 	0x04: id3.Id3v24,
 }
 
-const id3v2HeaderSIG = "ID3"
-const id3v2FooterSIG = "3DI"
-
+const tagHeaderSIG = "ID3"
+const tagFooterSIG = "3DI"
 const tagHeaderSize = 10

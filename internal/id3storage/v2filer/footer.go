@@ -1,23 +1,21 @@
-package id3v2
+package v2filer
 
 import (
 	"bytes"
 	"io"
-
-	id3reader "github.com/blugnu/tags/internal/id3/reader"
 )
 
 type Footer struct {
 }
 
 func ReadFooter(src io.ReadSeeker) (*Footer, error) {
-	reader := id3reader.NewReader(src)
-	sig, err := reader.ReadBytes(3)
+	reader := &reader{src}
+	sig, err := reader.readBytes(3)
 	if err != nil {
 		return nil, err
 	}
 
-	if !bytes.Equal(sig, []byte(id3v2FooterSIG)) {
+	if !bytes.Equal(sig, []byte(tagFooterSIG)) {
 		return nil, nil
 	}
 

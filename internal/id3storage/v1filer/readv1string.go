@@ -1,13 +1,19 @@
-package id3v1
+package v1filer
 
 import (
 	"strings"
+
+	"github.com/blugnu/tags/internal/id3storage"
 )
 
-func (tag *reader) readString(n int) (string, error) {
-	bytes, err := tag.ReadBytes(n)
+func (tag *reader) readV1String(n int) (string, error) {
+	bytes := make([]byte, n)
+	nr, err := tag.Read(bytes)
 	if err != nil {
 		return "", err
+	}
+	if nr < n {
+		return "", id3storage.InsufficientData{Needed: n, Have: nr}
 	}
 
 	// Remove any zero padding

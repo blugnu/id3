@@ -1,4 +1,4 @@
-package id3v2
+package v2filer
 
 import (
 	"bytes"
@@ -17,14 +17,9 @@ const (
 	Utf16
 	Utf16BE
 	Utf8
-	UnknownTextEncoding = 0xff
 )
 
-func (enc TextEncoding) isValid() bool {
-	return enc <= Utf8
-}
-
-func (enc TextEncoding) Decode(buf []byte) (string, error) {
+func (enc TextEncoding) decode(buf []byte) (string, error) {
 	switch enc {
 	case Iso88591:
 		dec := charmap.ISO8859_1.NewDecoder()
@@ -47,16 +42,20 @@ func (enc TextEncoding) Decode(buf []byte) (string, error) {
 
 	case Utf8:
 		return string(buf), nil
+
 	default:
 		return "", fmt.Errorf("text encoding (%v) not supported", enc)
 	}
 }
 
-var zlen = map[TextEncoding]int{
-	Iso88591: 1,
-	Utf8:     1,
-	Utf16:    2,
-	Utf16BE:  2,
+func (enc TextEncoding) zlen() int {
+	if enc == Utf8 || enc == Iso88591 {
+		return 1
+	}
+	if enc == Utf16 || enc == Utf16BE {
+		return 2
+	}
+	panic(fmt.Sprintf("zlen() undefined for invalid TextEncoding (%x)", enc))
 }
 
 func toUint16s(buf []byte) ([]uint16, error) {

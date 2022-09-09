@@ -1,4 +1,4 @@
-package id3v1
+package v1filer
 
 import (
 	"bytes"
