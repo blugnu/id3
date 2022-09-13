@@ -3,6 +3,7 @@ package mp3
 import (
 	"testing"
 
+	"github.com/blugnu/tags/id3"
 	"github.com/blugnu/tags/id3/id3v2"
 	"github.com/blugnu/tags/internal/testdata"
 )
@@ -152,7 +153,7 @@ func Test_LoadFrom_STTMP(t *testing.T) {
 	})
 
 	tag := mp3.Id3v2[0]
-	apic := tag.Find("APIC")
+	apic := tag.Find(id3.APIC)
 
 	t.Run("has a picture", func(t *testing.T) {
 		if apic == nil {
@@ -161,7 +162,7 @@ func Test_LoadFrom_STTMP(t *testing.T) {
 	})
 
 	t.Run("picture has data", func(t *testing.T) {
-		pic := apic.Data.(id3v2.Picture)
+		pic := apic.Data.(*id3v2.Picture)
 		if len(pic.Data) == 0 {
 			t.Errorf("APIC picture data not present")
 		}
@@ -197,7 +198,7 @@ func Test_LoadFrom_TROP(t *testing.T) {
 	})
 
 	tag := mp3.Id3v2[0]
-	apic := tag.Find("APIC")
+	apic := tag.Find(id3.APIC)
 
 	t.Run("has a picture", func(t *testing.T) {
 		if apic == nil {
@@ -206,7 +207,7 @@ func Test_LoadFrom_TROP(t *testing.T) {
 	})
 
 	t.Run("picture has data", func(t *testing.T) {
-		pic := apic.Data.(id3v2.Picture)
+		pic := apic.Data.(*id3v2.Picture)
 		if len(pic.Data) == 0 {
 			t.Errorf("APIC picture data not present")
 		}
