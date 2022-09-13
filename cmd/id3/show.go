@@ -60,10 +60,11 @@ func showtags(path string) {
 		println()
 		tagver := fmt.Sprintf("- %s", v2.Version.String())
 		for _, frame := range v2.Frames {
-			if frame.Text != nil {
-				fmt.Printf("    %-8s  %s  %s\n", tagver, frame.ID, *frame.Text)
+			value, ok := frame.Data.(string)
+			if !ok {
+				fmt.Printf("    %-8s  %v  (%d bytes)\n", tagver, frame.ID, frame.Size)
 			} else {
-				fmt.Printf("    %-8s  %s  %d bytes\n", tagver, frame.ID, frame.Size)
+				fmt.Printf("    %-8s  %v  %s\n", tagver, frame.ID, value)
 			}
 			tagver = ""
 		}

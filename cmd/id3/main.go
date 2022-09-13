@@ -4,6 +4,8 @@ import (
 	"flag"
 	"os"
 	"strings"
+
+	"github.com/blugnu/tags/cmd/id3/clean"
 )
 
 type _cmd struct {
@@ -29,7 +31,7 @@ func (_cmd) String() string {
 }
 
 func (_cmd) run() {
-	dolist := cmd.list || (cmd.String() == (_cmd{}).String() && len(flag.Args()) > 0)
+	dolist := cmd.list || (cmd.String() == (_cmd{}).String() && len(flag.Args()) == 0)
 
 	if dolist {
 		list()
@@ -39,6 +41,9 @@ func (_cmd) run() {
 	}
 	if cmd.list {
 		list()
+	}
+	if cmd.clean {
+		clean.Run()
 	}
 }
 
