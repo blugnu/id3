@@ -1,8 +1,10 @@
 package v2filer
 
 import (
+	"bytes"
 	"fmt"
 	"io"
+	"strconv"
 	"strings"
 
 	"github.com/blugnu/tags/id3"
@@ -32,8 +34,11 @@ func (reader *framereader) readFrame() error {
 		return fmt.Errorf("readFrame [header]: %w", err)
 	}
 
+	key := id3.FrameKeyForID(id)
+
 	reader.Frame = &id3v2.Frame{
 		ID:   id,
+		Key:  key,
 		Size: size,
 	}
 
@@ -60,22 +65,26 @@ func (reader *framereader) readFrame() error {
 		}
 	}
 
-	switch reader.Frame.ID {
+	switch reader.Frame.Key {
 
-	case "PIC":
-	case "APIC":
+	case id3.UnknownKey:
+		reader.Frame = nil
+		return fmt.Errorf("readFrame [%s]: unknown id", id)
+
+	case id3.APIC:
 		err = reader.readPictureFrame()
 
-	case "COM":
-	case "COMM":
+	case id3.COMM:
 		err = reader.readCommentFrame()
 
-	case "TXX":
-	case "TXXX":
+	case id3.TPOS, id3.TRCK:
+		err = reader.readPartOfSetFrame()
+
+	case id3.TXXX:
 		err = reader.readUserDefinedTextFrame()
 
 	default:
-		if reader.Frame.ID[0] == 'T' {
+		if id[0] == 'T' {
 			err = reader.readTextFrame()
 		} else {
 			err = reader.readUnknownFrame()
@@ -83,7 +92,7 @@ func (reader *framereader) readFrame() error {
 	}
 	if err != nil {
 		reader.Frame = nil
-		return fmt.Errorf("readFrame [%s]: %w", reader.Frame.ID, err)
+		return fmt.Errorf("readFrame [%s]: %w", id, err)
 	}
 
 	return nil
@@ -93,7 +102,7 @@ func (reader *framereader) readHeader(id *string, size *int, flags *uint16) erro
 	var err error
 
 	idlen := frameidlen[reader.Tag.Version]
-	idbytes, err := reader.readBytes(idlen)
+	idbytes, _, err := reader.readBytes(idlen)
 	if err != nil {
 		return fmt.Errorf("readHeader [id]: %w", err)
 	}
@@ -143,12 +152,12 @@ func (frame *framereader) readCommentFrame() error {
 	if err != nil {
 		return fmt.Errorf("readComment: %w", err)
 	}
-	c, err := frame.readString(enc, frame.Frame.Size-4-dlen) // TextEncoding + Language code = 4 bytes
+	c, _, err := frame.readString(enc, frame.Frame.Size-4-dlen) // TextEncoding + Language code = 4 bytes
 	if err != nil {
 		return fmt.Errorf("readComment: %w", err)
 	}
 
-	frame.Data = id3v2.Comment{
+	frame.Data = &id3v2.Comment{
 		LanguageCode: lang,
 		Description:  d,
 		Comment:      c,
@@ -182,7 +191,7 @@ func (frame *framereader) readPictureFrame() error {
 		return err
 	}
 
-	data, err := frame.readBytes(frame.Frame.Size - (nmimebytes + ndescbytes + 2)) // +2 = 1 each for text encoding and picture type
+	data, _, err := frame.readBytes(frame.Frame.Size - (nmimebytes + ndescbytes + 2)) // +2 = 1 each for text encoding and picture type
 	if err != nil {
 		return err
 	}
@@ -193,12 +202,11 @@ func (frame *framereader) readPictureFrame() error {
 		mime = "image/gif"
 	case "png":
 		mime = "image/png"
-	case "jpg":
-	case "jpeg":
+	case "jpg", "jpeg":
 		mime = "image/jpeg"
 	}
 
-	frame.Data = id3v2.Picture{
+	frame.Data = &id3v2.Picture{
 		MimeType:    mime,
 		PictureType: pictureType,
 		Description: description,
@@ -209,11 +217,57 @@ func (frame *framereader) readPictureFrame() error {
 }
 
 func (reader *framereader) readLanguageCode() (string, error) {
-	buf, err := reader.readBytes(3)
+	buf, _, err := reader.readBytes(3)
 	if err != nil {
 		return "", err
 	}
 	return string(buf), nil
+}
+
+func (reader *framereader) readPartOfSetFrame() error {
+	err := reader.readTextFrame()
+	if err != nil {
+		return fmt.Errorf("readPartOfSetFrame: %w", err)
+	}
+	s := reader.Frame.Data.(string)
+	el := strings.Split(s, "/")
+	var n int64 = -1
+	var c int64 = -1
+	switch len(el) {
+	case 0:
+		// NO-OP (will be set as '-1 of -1')
+
+	case 1:
+		n, err = strconv.ParseInt(s, 10, 32)
+		if err != nil {
+			return fmt.Errorf("readPartOfSetFrame [item no]: %w", err)
+		}
+		c = -1
+
+	case 2:
+		if len(el[0]) > 0 {
+			n, err = strconv.ParseInt(el[0], 10, 32)
+			if err != nil {
+				return fmt.Errorf("readPartOfSetFrame [item no]: %w", err)
+			}
+		}
+		if len(el[1]) > 0 {
+			c, err = strconv.ParseInt(el[1], 10, 32)
+			if err != nil {
+				return fmt.Errorf("readPartOfSetFrame [item count]: %w", err)
+			}
+		}
+
+	default:
+		return fmt.Errorf("readPartOfSetFrame: invalid (%v)", s)
+	}
+
+	reader.Frame.Data = &id3v2.PartOfSet{
+		ItemNo:    int(n),
+		ItemCount: int(c),
+	}
+
+	return nil
 }
 
 func (reader *framereader) readTextEncoding() (TextEncoding, error) {
@@ -230,18 +284,28 @@ func (reader *framereader) readTextEncoding() (TextEncoding, error) {
 	return TextEncoding(b), nil
 }
 
-func (reader *framereader) readString(enc TextEncoding, strlen int) (string, error) {
-	buf, err := reader.readBytes(strlen)
+func (reader *framereader) readString(enc TextEncoding, maxlen int) (string, int, error) {
+	// read the maxlen bytes specified
+	buf, n, err := reader.readBytes(maxlen)
 	if err != nil {
-		return "", fmt.Errorf("ReadString: %w", err)
+		return "", n, fmt.Errorf("ReadString: %w", err)
 	}
 
+	// remove any null-terminator(s) for the specified encoding
+	zlen := enc.zlen()
+	zterm := make([]byte, zlen)
+	for len(buf) > 0 && bytes.Equal(buf[len(buf)-zlen:], zterm) {
+		buf = buf[:len(buf)-(zlen+1)]
+	}
+
+	// decode the buffer using the specified encoding
 	s, err := enc.decode(buf)
 	if err != nil {
-		return "", fmt.Errorf("ReadString: %w", err)
+		return "", n, fmt.Errorf("ReadString: %w", err)
 	}
 
-	return s, nil
+	// return the decoded string and the number of bytes originally read (including any null terminators)
+	return s, n, nil
 }
 
 func (reader *framereader) readStringz(enc TextEncoding) (string, int, error) {
@@ -276,23 +340,17 @@ func (frame *framereader) readTextFrame() error {
 
 	// TODO: multiple null-termed values...
 
-	buf, err := frame.readBytes(frame.Frame.Size - 1) // TextEncoding = 1 byte
+	str, _, err := frame.readString(enc, frame.Frame.Size-1) // TextEncoding = 1 byte
 	if err != nil {
 		return err
 	}
-
-	v, err := enc.decode(buf)
-	if err != nil {
-		return fmt.Errorf("readText: %w", err)
-	}
-
-	frame.Data = v
+	frame.Data = str
 
 	return nil
 }
 
 func (frame *framereader) readUnknownFrame() error {
-	data, err := frame.readBytes(frame.Frame.Size)
+	data, _, err := frame.readBytes(frame.Frame.Size)
 	if err != nil {
 		return err
 	}
@@ -315,12 +373,12 @@ func (frame *framereader) readUserDefinedTextFrame() error {
 		return fmt.Errorf("readUserDefinedText: %w", err)
 	}
 
-	t, err := frame.readString(enc, frame.Frame.Size-1-dlen)
+	t, _, err := frame.readString(enc, frame.Frame.Size-1-dlen)
 	if err != nil {
 		return fmt.Errorf("readUserDefinedText: %w", err)
 	}
 
-	frame.Data = id3v2.UserDefinedText{
+	frame.Data = &id3v2.UserDefinedText{
 		Description: d,
 		Text:        t,
 	}

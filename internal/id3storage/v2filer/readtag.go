@@ -58,7 +58,7 @@ func (tag *tagreader) readTag() error {
 	if err != nil {
 		if errors.Is(err, id3storage.UnsupportedTag{}) {
 			tag.seek(pos, io.SeekStart)
-			data, err := tag.readBytes(int(size) + tagHeaderSize)
+			data, _, err := tag.readBytes(int(size) + tagHeaderSize)
 			if err != nil {
 				return err
 			}
@@ -91,7 +91,7 @@ func (tag *tagreader) readTag() error {
 
 	// .. and will definitely have at least one frame
 
-	framedata, err := tag.readBytes(int(tag.Size))
+	framedata, _, err := tag.readBytes(int(tag.Size))
 	if err != nil {
 		return err
 	}
@@ -113,7 +113,7 @@ func (header *tagreader) readHeader(pos *int64, majorver *byte, revision *byte, 
 	var err error
 
 	*pos, _ = header.seek(0, io.SeekCurrent)
-	sig, err := header.readBytes(3)
+	sig, _, err := header.readBytes(3)
 	if err != nil {
 		return err
 	}
@@ -260,7 +260,7 @@ func (tag *tagreader) readFlag(bit byte) error {
 	if datalen != expected.datalen {
 		return fmt.Errorf(" %s flag: unexpected data length: got %d, expected %d", expected.name, datalen, expected.datalen)
 	}
-	data, err := tag.readBytes(int(datalen))
+	data, _, err := tag.readBytes(int(datalen))
 	if err != nil {
 		return err
 	}

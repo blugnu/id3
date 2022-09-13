@@ -23,33 +23,28 @@ func (r *reader) readByte() (byte, error) {
 }
 
 // Reads the specified number of bytes and returns the result in a slice
-func (r *reader) readBytes(n int) ([]byte, error) {
+func (r *reader) readBytes(n int) ([]byte, int, error) {
 	if n == 0 {
-		return []byte{}, nil
+		return []byte{}, 0, nil
 	}
 
 	const max = 10 << 20
 
 	if n > max {
 		b := &bytes.Buffer{}
-		if _, err := io.CopyN(b, r.Reader, int64(n)); err != nil {
-			return nil, fmt.Errorf("ReadBytes (> max): %w", err)
+		nr, err := io.CopyN(b, r.Reader, int64(n))
+		if err != nil {
+			return nil, int(nr), fmt.Errorf("ReadBytes (> max): %w", err)
 		}
-		// r.curr += int64(n)
-		// if r.curr > r.max {
-		// 	r.curr = r.max
-		// }
-		return b.Bytes(), nil
+		return b.Bytes(), int(nr), nil
 	}
 
 	b := make([]byte, n)
-	_, err := io.ReadFull(r.Reader, b)
-	// nr, err := io.ReadFull(r.Reader, b)
-	// r.curr += int64(nr)
+	nr, err := io.ReadFull(r.Reader, b)
 	if err != nil {
-		return nil, fmt.Errorf("ReadBytes: %w", err)
+		return nil, nr, fmt.Errorf("ReadBytes: %w", err)
 	}
-	return b, nil
+	return b, nr, nil
 }
 
 // Reads bytes until a null (Z-ero) is encountered.
@@ -76,7 +71,7 @@ func (r *reader) readBytez() ([]byte, error) {
 func (r *reader) readBytezz() ([]byte, error) {
 	buf := []byte{}
 	for {
-		chunk, err := r.readBytes(2)
+		chunk, _, err := r.readBytes(2)
 		if err != nil {
 			return nil, fmt.Errorf("readBytezz: %w", err)
 		}
@@ -90,7 +85,7 @@ func (r *reader) readBytezz() ([]byte, error) {
 
 // Reads and Decodes a 4-byte sync-safe int
 func (r *reader) readSyncSafeUint32() (uint32, error) {
-	buf, err := r.readBytes(4)
+	buf, _, err := r.readBytes(4)
 	if err != nil {
 		return 0, err
 	}
@@ -139,7 +134,7 @@ func (r *reader) readUint32() (uint32, error) {
 func (r *reader) readUint(n int) (uint, error) {
 	var result uint64
 
-	bytes, err := r.readBytes(n)
+	bytes, _, err := r.readBytes(n)
 	if err != nil {
 		return 0, err
 	}
